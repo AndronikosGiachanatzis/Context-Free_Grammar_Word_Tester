@@ -133,6 +133,27 @@ def isSolution(node, word):
     return node.expression == word
 
 
+def getSolution(node):
+    '''
+    Follows the branches of the tree from the child-solution up to the the root of the tree to map the way that the
+    target word was created
+    :param node (treenode):
+    :return (list): The sequence of replacements using the rules of the grammar that leads to the target word
+    '''
+    solution_path = [node.expression]
+    curr_node = node.parent
+
+    # follow the branches from the child to the root
+    while curr_node is not None:
+        # add the current expression to the solution path
+        solution_path.append(curr_node.expression)
+        # move to the parent of the current node
+        curr_node = curr_node.parent
+
+    solution_path.reverse()
+    return solution_path
+
+
 def prune(node, word, description_dict, nodes):
     '''
     Checks whether a given node needs to be pruned by checking if the node's expression satisfies certain criteria.
@@ -164,7 +185,9 @@ def search(word, frontier, description_dict):
     :param word (str): The target word
     :param frontier (list): The search frontier
     :param description_dict (dict): The description of the grammar
-    :return (bool): True if the target word can be derived from the grammar / False, otherwise
+    :return (list): The first element of the list is a bool stating whether the word is valid or not (True or False
+                    respectively. The second element is either a string containing the replacement sequence that leads
+                    to the valid word or None if the word isn't valid
     '''
 
     nodes = dict()
@@ -172,13 +195,19 @@ def search(word, frontier, description_dict):
     # while the frontier is not empty continue searching
     # if the word is proved not to be valid then a break will occur
     while frontier:
-
+        # handle the first element of the frontier
         node = frontier[0]
         nodes[node.expression] = node
+
+        # check if the current node is a solution
         if isSolution(node, word):
-            return True
+            return [True, getSolution(node)]
+
+        # find all the children of the current node
         children = findChildren(node, description_dict)
+        # remove it from the search frontier
         frontier.pop(0)
+        # add only the useful children to the tree
         for child in children:
             # add the child to the tree and the frontier only if it doesn't need to be pruned
             if not prune(child, word, description_dict, nodes):
@@ -186,7 +215,7 @@ def search(word, frontier, description_dict):
                 nodes[child.expression] = child
 
     # if this point is reached that means that the word is not valid
-    return False
+    return [False, None]
 
 
 def main():
@@ -218,12 +247,13 @@ def main():
         result = search(word, frontier, description_dict)
 
         # print the result of the search
-        if result:
-            print("[+] The word is valid!")
+        if result[0]:
+            print("[+] The word IS valid!")
+            print(f"\tProduction of the word: {' -> '.join(result[1])}\n")
         else:
-            print("[+] The word is not valid!")
+            print("[+] The word is NOT valid!")
 
-        choice = input("Do you want to check another word? y/n")
+        choice = input("Do you want to check another word? y/n: ")
         if choice == 'n':
             break
 
