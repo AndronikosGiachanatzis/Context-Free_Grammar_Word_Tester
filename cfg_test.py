@@ -18,6 +18,7 @@ Usage: Prepare a file that follows the template in the file: 'descriprion_templa
 
 import argparse
 import treenode
+import re
 
 # suppose that the empty word is denoted by the character @. That character cannot belong to any of the symbols set
 # in the grammar
@@ -154,6 +155,38 @@ def getSolution(node):
     return solution_path
 
 
+def getRegex(expression, terminals, nonterminals, initial):
+    '''
+    Creates a regular expression string given an incomplete expression, that is an expression that does not contain only
+    terminal letters but some non-terminal as well
+    :param expression (str): The incomplete expression from which a regex will be created
+    :param terminals (list): The terminal letters of the grammar
+    :param nonterminals (list): The non-terminal letters of the grammar
+    :param initial (str): The initial letter of the grammar
+
+    :return:
+    '''
+
+    regex = expression
+
+    # if the first letter is a terminal letter then the regex must take into consideration that the word should begin
+    # with those letters
+    if expression[0] in terminals:
+        regex = "^" + expression
+
+    # if the last letter is a terminal letter then the regex must take into consideration that the word should end
+    # with those letters
+    if expression[-1] in terminals:
+        regex = regex + "$"
+
+    for c in nonterminals:
+        regex = regex.replace(c, ".*")
+
+    regex.replace(initial, ".*")
+
+    return regex
+
+
 def prune(node, word, description_dict, nodes):
     '''
     Checks whether a given node needs to be pruned by checking if the node's expression satisfies certain criteria.
@@ -173,9 +206,16 @@ def prune(node, word, description_dict, nodes):
             if EMPTY_WORD in description_dict["rules"][c]:
                 empty_rules += 1
 
-    if (node.expression not in nodes.keys()) and (len(node.expression) - empty_rules <= len(word)):
+    # create the regular expression
+    regex = getRegex(node.expression, description_dict["terminals"], description_dict["nonterminals"], description_dict["initial"])
+    # search if the expression so far can match the word using the regex
+    result = re.search(rf"{regex}", word)
+
+    # if the expression does not belong already to the treee and if the word can be derived somehow from the expression
+    # the node must not be pruned
+    if node.expression not in nodes.keys() and result is not None:
         return False
-    else:
+    else: # one of the above criteria is not satisfied so the node must be pruned
         return True
 
 
@@ -249,11 +289,11 @@ def main():
         # print the result of the search
         if result[0]:
             print("[+] The word IS valid!")
-            print(f"\tProduction of the word: {' -> '.join(result[1])}\n")
+            print(f"\tProduction of the word: {' -> '.join(result[1])}")
         else:
             print("[+] The word is NOT valid!")
 
-        choice = input("Do you want to check another word? y/n: ")
+        choice = input("\nDo you want to check another word? y/n: ")
         if choice == 'n':
             break
 
