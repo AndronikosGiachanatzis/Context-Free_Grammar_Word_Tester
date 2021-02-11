@@ -1,3 +1,21 @@
+"""
+Author: Andronikos Giachanatzis Grammatikopoulos
+
+Description: Developed as an assignment during my fourth year in the University of Macedonia. This module is the main
+            execution point of the program. Given a context-free grammar (inside a file in specific format) it searches
+            whether a given word can be derived from that grammar.
+
+Usage: Prepare a file that follows the template in the file: 'descriprion_template.txt'. This file must contain the
+    description of a context-free grammar. Note that the Empty Word is identified by the character '@'. After you
+    prepare this file execute the cfg_test.py file using the -f flag followed by the name of the file containing the
+    description of the automaton as such: 'python3 cfg_test.py -f grammar_description.txt'.
+    Afterwards you will be prompted to enter the word which you want to check if it can be derived from the grammar of
+    the file passed as an argument. After you press Enter the result will be printed.
+    After you see the result you will be prompted to state whether you want to check another word. If you want to quit
+    answer with the character 'n' and if you want to continue press any other key.
+"""
+
+
 import argparse
 import treenode
 
@@ -5,7 +23,12 @@ import treenode
 # in the grammar
 EMPTY_WORD = "@"
 
+
 def getFilename():
+    '''
+    Creates a command line argument parser and retrieves the filename passed as an argument
+    :return (str): The name of the file of the description of the grammar
+    '''
     parser = argparse.ArgumentParser(description="A program that checks whether a word belongs to a language of a "
                                                  "context-free grammar.",
                                      usage="python3  assignment2.py -f <description-file.txt>")
@@ -18,6 +41,11 @@ def getFilename():
 
 
 def readDescription(filename):
+    '''
+    Reads the description of the grammar from a file
+    :param filename (str): The name of the file which contains the description of the grammar
+    :return (dict): The description of the grammar
+    '''
     # the dictionary storing the description of the grammar
     description = dict()
     # try to open the file given in the command line
@@ -50,17 +78,35 @@ def readDescription(filename):
 
 
 def initializeTree(initial_symbol):
+    '''
+    Creates the root node of the tree
+    :param initial_symbol (str): The initial symbol of the grammar
+    :return (list): A list with a single element, the root of the tree
+    '''
 
     root = treenode.TreeNode(initial_symbol, None, None)
     return [root]
 
 
 def createChild(expression, rule, parent):
+    '''
+    Creates the child of a node based on a given
+    :param expression (str): The expression of the child
+    :param rule (str): The rule which was used to create the child's expression from its father's expression
+    :param parent (treenode): The parent of the child node
+    :return (treenode): The new child node
+    '''
 
     return treenode.TreeNode(expression, parent, rule)
 
 
 def findChildren(node, description_dict):
+    '''
+    Creates all the children that can be created from a given node's expression using the rules of the grammar
+    :param node (treenode): The parent node
+    :param description_dict (dict): The description of the grammar
+    :return (list): A list containing all the node's children
+    '''
     children = list()
     for c in node.expression:
         if c in description_dict["nonterminals"]:
@@ -76,17 +122,56 @@ def findChildren(node, description_dict):
     return children
 
 
+
 def isSolution(node, word):
+    '''
+    Checks if a given node's expression is the target word
+    :param node (treenode): The node of which the expression is compared to the target node
+    :param word (str): the target node
+    :return (bool): True if the node's expression is the target node / False, otherwise
+    '''
     return node.expression == word
 
 
+def prune(node, word, description_dict, nodes):
+    '''
+    Checks whether a given node needs to be pruned by checking if the node's expression satisfies certain criteria.
+    A node will be pruned (will not be analyzed further if):
+        - The node's expression is the same with an expression from another node already present in the tree
+        - The potential length of the expression exceeds the length of the target word
+    :param node (treenode): The node to be pruned
+    :param word (str): The target word
+    :param description_dict (dict): The description of the grammar
+    :param nodes (list): The nodes of the tree
+    :return (bool): True if the node has to be pruned / False, otherwise
+    '''
+    # count occurrences of not-terminal symbols
+    empty_rules = 0
+    for c in node.expression:
+        if c.isupper():
+            if EMPTY_WORD in description_dict["rules"][c]:
+                empty_rules += 1
+
+    if (node.expression not in nodes.keys()) and (len(node.expression) - empty_rules <= len(word)):
+        return False
+    else:
+        return True
+
+
 def search(word, frontier, description_dict):
+    '''
+    Searches whether a word can be derived from a certain context-free grammar
+    :param word (str): The target word
+    :param frontier (list): The search frontier
+    :param description_dict (dict): The description of the grammar
+    :return (bool): True if the target word can be derived from the grammar / False, otherwise
+    '''
 
     nodes = dict()
 
     # while the frontier is not empty continue searching
     # if the word is proved not to be valid then a break will occur
-    while frontier is not []:
+    while frontier:
 
         node = frontier[0]
         nodes[node.expression] = node
@@ -95,21 +180,32 @@ def search(word, frontier, description_dict):
         children = findChildren(node, description_dict)
         frontier.pop(0)
         for child in children:
-            if child.expression not in nodes.keys():
+            # add the child to the tree and the frontier only if it doesn't need to be pruned
+            if not prune(child, word, description_dict, nodes):
                 frontier.append(child)
                 nodes[child.expression] = child
 
+    # if this point is reached that means that the word is not valid
+    return False
 
 
 def main():
+    '''
+    The main execution point of the program. Reads the filename from the command line, prompts the user iteratively
+    to enter a word and checks if the word can be derived from the grammar in the description file. Finally, it
+    prints to the user the result of the search.
+    :return (None):
+    '''
     # get the filename from the arguments of the command line
     filename = getFilename()
     # read the description from the file
     description_dict = readDescription(filename)
 
+    # if there was some error while reading the description file
     if description_dict == 1:
         return
 
+    # search until the user doesn't want to search another word
     while True:
         # read the word
         word = input("Enter the word: ")
@@ -118,8 +214,10 @@ def main():
         frontier = None
         frontier = initializeTree(description_dict["initial"])
 
+        # start searching
         result = search(word, frontier, description_dict)
 
+        # print the result of the search
         if result:
             print("[+] The word is valid!")
         else:
@@ -129,9 +227,12 @@ def main():
         if choice == 'n':
             break
 
+    return
+
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
+        print("Keyboard Interrupt detected. Exiting.")
         exit(1)
