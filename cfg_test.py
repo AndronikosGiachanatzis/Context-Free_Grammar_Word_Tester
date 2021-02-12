@@ -168,21 +168,21 @@ def getRegex(expression, terminals, nonterminals, initial):
     '''
 
     regex = expression
+    if len(expression) > 0:
+        # if the first letter is a terminal letter then the regex must take into consideration that the word should begin
+        # with those letters
+        if expression[0] in terminals:
+            regex = "^" + expression
 
-    # if the first letter is a terminal letter then the regex must take into consideration that the word should begin
-    # with those letters
-    if expression[0] in terminals:
-        regex = "^" + expression
+        # if the last letter is a terminal letter then the regex must take into consideration that the word should end
+        # with those letters
+        if expression[-1] in terminals:
+            regex = regex + "$"
 
-    # if the last letter is a terminal letter then the regex must take into consideration that the word should end
-    # with those letters
-    if expression[-1] in terminals:
-        regex = regex + "$"
+        for c in nonterminals:
+            regex = regex.replace(c, ".*")
 
-    for c in nonterminals:
-        regex = regex.replace(c, ".*")
-
-    regex.replace(initial, ".*")
+        regex.replace(initial, ".*")
 
     return regex
 
