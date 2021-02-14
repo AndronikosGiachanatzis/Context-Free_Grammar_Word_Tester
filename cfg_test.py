@@ -114,9 +114,9 @@ def findChildren(node, description_dict):
             for r in description_dict["rules"][c]:
                 expression = node.expression
                 if r == "@":
-                    expression = expression.replace(c, "")
+                    expression = expression.replace(c, "", 1)
                 else:
-                    expression = expression.replace(c, r)
+                    expression = expression.replace(c, r, 1)
                 rule = f"{c} {r}"
                 child = createChild(expression, rule, node)
                 children.append(child)
@@ -168,7 +168,9 @@ def getRegex(expression, terminals, nonterminals, initial):
     '''
 
     regex = expression
+
     if len(expression) > 0:
+
         # if the first letter is a terminal letter then the regex must take into consideration that the word should begin
         # with those letters
         if expression[0] in terminals:
@@ -183,6 +185,7 @@ def getRegex(expression, terminals, nonterminals, initial):
             regex = regex.replace(c, ".*")
 
         regex.replace(initial, ".*")
+
 
     return regex
 
@@ -199,12 +202,6 @@ def prune(node, word, description_dict, nodes):
     :param nodes (list): The nodes of the tree
     :return (bool): True if the node has to be pruned / False, otherwise
     '''
-    # count occurrences of not-terminal symbols
-    empty_rules = 0
-    for c in node.expression:
-        if c.isupper():
-            if EMPTY_WORD in description_dict["rules"][c]:
-                empty_rules += 1
 
     # create the regular expression
     regex = getRegex(node.expression, description_dict["terminals"], description_dict["nonterminals"], description_dict["initial"])

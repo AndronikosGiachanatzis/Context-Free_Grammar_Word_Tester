@@ -1,0 +1,14 @@
+2
+ab
+4
+SEAB
+S
+8
+S aEb
+E aEb
+E aA
+E bB
+A aA
+A @
+B Bb
+B @

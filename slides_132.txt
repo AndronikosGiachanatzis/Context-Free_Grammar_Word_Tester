@@ -1,0 +1,10 @@
+3
+abc
+1
+S
+S
+3
+S aSa
+S bSb
+S c
+
