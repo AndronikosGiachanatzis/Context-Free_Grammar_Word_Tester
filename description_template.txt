@@ -1,0 +1,9 @@
+3 # grammar has 3 terminal symbols
+abc # the terminal symbols
+1 # the grammar has 1 non-terminal symbol
+S # the terminal symbol(s)
+S # the initial symbol
+3 # the grammar has 3 rules
+S aSa # rule 1: the S symbol is substituted by aSa
+S bSb # rule 2: the S symbol is substituted by bSb
+S c # rule 3: the S symbol is substituted by c
